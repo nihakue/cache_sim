@@ -34,28 +34,32 @@ class Cache(object):
         self._index_bits = int(log(sets, 2))
         #Get the # of bits needed to offset into a block
         self._offset_bits = int(log(block_size, 2))
-        self._blocks = {}
+        self._set_dict = {}
 
-        self.w_hits = 0
-        self.r_hits = 0
-        self.n_ops = 0
+        self.w_miss = 0
+        self.r_miss = 0
+        self.w_ops = 0
+        self.r_ops = 0
 
     def _execute(self, operation):
         '''Takes an operation (op) tuple containing a r/w operation string, and
-        a raw memory address. Incrememnts appropriate hit counts for a hit,
-        updates the cache on a miss'''
-        op, addr = operation
+        a raw memory address. Incrememnts appropriate miss counts for a miss
+        and updates the cache'''
+        op, raw_addr = operation
         try:
-            result = self[addr]
+            block = self[raw_addr]
         except (KeyError, IndexError):
-            self._insert(addr)
-        else:
+            #Miss
+            self._insert(raw_addr)
             if op.lower() == 'r':
-                self.r_hits += 1
+                self.r_miss += 1
             elif op.lower() == 'w':
-                self.w_hits += 1
+                self.w_miss += 1
         finally:
-            self.n_ops +=1
+            if op.lower() == 'r':
+                self.r_ops += 1
+            elif op.lower() == 'w':
+                self.w_ops += 1
 
     def _calculate_size(self):
         '''Calculates the cache size in bytes'''
@@ -68,9 +72,9 @@ class Cache(object):
         If the index isn't found, we throw a key error.
         '''
         tag, index, offset = self.decode(addr)
-        if index in self._blocks:
-            if any(tag in pair for pair in self._blocks[index]):
-                return self._blocks[index]
+        if index in self._set_dict:
+            if any(tag in pair for pair in self._set_dict[index]):
+                return self._set_dict[index]
             else:
                 raise IndexError("Block %s is not in set %s" % (tag, index))
         else:
@@ -80,7 +84,7 @@ class Cache(object):
         '''updates the set at raw address (addr)
         using LRU replacement policy if needed'''
         tag, index, offset = self.decode(addr)
-        cache_set = self._blocks.setdefault(index, [])
+        cache_set = self._set_dict.setdefault(index, [])
         t = time()
         if len(cache_set) < self._ways:
             cache_set.append((tag, t))
@@ -105,7 +109,7 @@ class Cache(object):
         assert len(tag + index + offset) == len(addr_bits)
         return (tag, index, offset)
 
-    def simulate(tracefile):
+    def simulate(self, tracefile):
         '''Simulates this cache on a memory trace file. tracefile should
         be a simple text file containing a memory operation on each line
         in this format:
@@ -114,6 +118,32 @@ class Cache(object):
         etc.
         '''
         trace = trace_read(tracefile)
+        for operation in trace:
+            self._execute(operation)
+        misses = self.w_miss + self.r_miss
+        ops = self.w_ops + self.r_ops
+        total_missrate = misses / (ops * 1.0)
+        write_missrate = self.w_miss / (self.w_ops * 1.0)
+        read_missrate = self.r_miss / (self.r_ops * 1.0)
+        results = dict(
+                       cache_size=self._size,
+                       ways=self._ways,
+                       sets=self._sets,
+                       total_missrate=total_missrate,
+                       write_missrate=write_missrate,
+                       read_missrate=read_missrate
+                       )
+        try:
+            from pprint import pprint
+            import json
+        except ImportError:
+            print results
+        else:
+            pprint(results)
+            with open('results.txt', 'a') as out_file:
+                j = json.dumps(results, indent=4)
+                print >> out_file, j
+        return
 
 
 
