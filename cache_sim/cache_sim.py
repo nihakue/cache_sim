@@ -21,16 +21,16 @@ class Cache(object):
     :type: int
     """
     def __init__(self, ways=1, sets=128, block_size=32):
-        assert all((x % 2 == 0
-                   for x in [sets, block_size]))
-        assert ways is 1 or ways % 2 == 0
+        # assert all((x % 2 == 0
+        #            for x in [sets, block_size]))
+        # assert ways is 1 or ways % 2 == 0
 
         self._ways = ways
         self._sets = sets
         #Block size in Bytes
         self._block_size = block_size
         self._size = self._calculate_size()
-        #Get the # of bits needed to decode the index
+        #Get the # of bits needed to _decode the index
         self._index_bits = int(log(sets, 2))
         #Get the # of bits needed to offset into a block
         self._offset_bits = int(log(block_size, 2))
@@ -71,7 +71,7 @@ class Cache(object):
         pair is returned, otherwise throw a key error (miss).
         If the index isn't found, we throw a key error.
         '''
-        tag, index, offset = self.decode(addr)
+        tag, index, offset = self._decode(addr)
         if index in self._set_dict:
             if any(tag in pair for pair in self._set_dict[index]):
                 return self._set_dict[index]
@@ -83,7 +83,7 @@ class Cache(object):
     def _insert(self, addr):
         '''updates the set at raw address (addr)
         using LRU replacement policy if needed'''
-        tag, index, offset = self.decode(addr)
+        tag, index, offset = self._decode(addr)
         cache_set = self._set_dict.setdefault(index, [])
         t = time()
         if len(cache_set) < self._ways:
@@ -95,7 +95,7 @@ class Cache(object):
 
 
 
-    def decode(self, raw_addr):
+    def _decode(self, raw_addr):
         assert type(raw_addr) is str
         '''returns the tag, index, and offset for a raw address'''
         addr_bits = bin(int(raw_addr, 16))[2:]
