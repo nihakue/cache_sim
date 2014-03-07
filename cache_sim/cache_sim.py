@@ -122,7 +122,7 @@ class Cache(object):
         self.r_miss = 0
         self.w_miss = 0
 
-    def simulate(self, tracefile, verbose=False, outfile=None):
+    def simulate(self, tracefile, verbose=False):
         '''Simulates this cache on a memory trace file. tracefile should
         be a simple text file containing a memory operation on each line
         in this format:
@@ -135,20 +135,23 @@ class Cache(object):
             self._reset()
 
         trace = trace_read(tracefile)
+        t = time()
         for operation in trace:
             self._execute(operation)
-
+        dt = time() - t
 
         misses = self.w_miss + self.r_miss
         ops = self.w_ops + self.r_ops
         total_missrate = misses / (ops * 1.0)
         write_missrate = self.w_miss / (self.w_ops * 1.0)
         read_missrate = self.r_miss / (self.r_ops * 1.0)
+        exec_time = dt
 
         #Do some cursory checks to verify sane results. Doesn't
         #prove that they're valid, just that they could be.
 
-        assert all([len(self._set_dicts[s]) == self._ways for s in self._set_dicts])
+        assert all([len(s) <= self._ways
+                   for s in self._set_dicts.itervalues()])
         assert ops == len(trace)
 
         results = dict(
@@ -158,7 +161,8 @@ class Cache(object):
                        total_missrate=total_missrate,
                        write_missrate=write_missrate,
                        read_missrate=read_missrate,
-                       trace_file=tracefile
+                       trace_file=tracefile,
+                       exec_time=exec_time
                        )
         if verbose:
             try:
@@ -168,19 +172,19 @@ class Cache(object):
                 print results
             else:
                 pprint(results)
-        if outfile:
-            try:
-                import json
-            except ImportError:
-                pass
-            else:
-                with open('results.txt', 'a') as out_file:
-                    j = json.dumps(results, indent=4)
-                    print >> out_file, j
         return results
 
 def test_caches():
-    m_range = [1, 2, 4, 8, 16, 32]
+    m_range = [1, 2, 4, 8, 16]
     ways = [1, 2, 4, 8, 16]
     caches = [Cache(sets=128/k * i, ways=k) for i in m_range for k in ways]
     return caches
+
+def simulate_all(infile, outfile):
+    import json
+    caches = test_caches()
+    results = [c.simulate(infile) for c in caches]
+    with open(outfile, 'w') as o:
+        for result in results:
+            j = json.dumps(result, indent=4)
+            print >> o, j
