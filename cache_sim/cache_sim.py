@@ -122,7 +122,7 @@ class Cache(object):
         self.r_miss = 0
         self.w_miss = 0
 
-    def simulate(self, tracefile):
+    def simulate(self, tracefile, verbose=False, outfile=None):
         '''Simulates this cache on a memory trace file. tracefile should
         be a simple text file containing a memory operation on each line
         in this format:
@@ -148,7 +148,7 @@ class Cache(object):
         #Do some cursory checks to verify sane results. Doesn't
         #prove that they're valid, just that they could be.
 
-        assert all([len(c._set_dict[s]) == self._ways for s in c._set_dict])
+        assert all([len(self._set_dicts[s]) == self._ways for s in self._set_dicts])
         assert ops == len(trace)
 
         results = dict(
@@ -160,14 +160,27 @@ class Cache(object):
                        read_missrate=read_missrate,
                        trace_file=tracefile
                        )
-        try:
-            from pprint import pprint
-            import json
-        except ImportError:
-            print results
-        else:
-            pprint(results)
-            with open('results.txt', 'a') as out_file:
-                j = json.dumps(results, indent=4)
-                print >> out_file, j
+        if verbose:
+            try:
+                from pprint import pprint
+                import json
+            except ImportError:
+                print results
+            else:
+                pprint(results)
+        if outfile:
+            try:
+                import json
+            except ImportError:
+                pass
+            else:
+                with open('results.txt', 'a') as out_file:
+                    j = json.dumps(results, indent=4)
+                    print >> out_file, j
         return results
+
+def test_caches():
+    m_range = [1, 2, 4, 8, 16, 32]
+    ways = [1, 2, 4, 8, 16]
+    caches = [Cache(sets=128/k * i, ways=k) for i in m_range for k in ways]
+    return caches
