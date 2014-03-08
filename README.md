@@ -1,7 +1,8 @@
 #cache\_sim
 
 ###A cache simulator and analysis tool written in python.
-####Created for a Computer Architecture class at Edinburgh Uni
+####Created for a Computer Architecture class at Edinburgh Uni.
+####All parts implemented.
 
 ##Results
 If you're just interested in the simulation results, check out the two .json files mcf\_results.json and gcc\_results.json.
@@ -13,24 +14,25 @@ If you'd like to get a little more involved, import the Cache class from cache\_
 
 To quickly create all of the caches specified in the coursework description, run this code:
 
-    from cache_sim import test_caches
+    from cache_sim.cache_sim import test_caches
     caches = test_caches()
 
-to get a list of all the caches. Alternatively, just do this:
+to get a list of all the caches.
+Alternatively, just do this:
 
-    from cache_sim import simulate_all
-    simulate_all('mcf_memref.out', 'mcf_results.json2')
+    from cache_sim.cache_sim import simulate_all
+    simulate_all('gcc_memref.out', 'gcc_results2.json')
 
 ##Structure
 Simulation is done using a cache class's "execute" method, which looks for a raw address (a 12 digit hex string) in its sets, and logs misses when they occur. If you'd like to see how things are working, you can break the process into steps. i.e.
 
-    c.\_decode('FFFFFFFFFFFF')
+    c._decode('FFFFFFFFFFFF')
 
 returns ('000011111111111111111111111111111111', '1111111', '11111')
 
 this is the tag, index, and block offset used to find a set/block in the cache.
 
-    c.\_insert('FFFFFFFFFFFF')
+    c._insert('FFFFFFFFFFFF')
 
 inserts a block into the cache.
 

@@ -23,8 +23,8 @@ class Cache(object):
         #            for x in [n_sets, block_size]))
         # assert n_ways is 1 or n_ways % 2 == 0
 
-        self._n_ways = n_ways
-        self._n_sets = n_sets
+        self.n_ways = n_ways
+        self.n_sets = n_sets
         self._address_size = address_size
         #Block size in Bytes
         self._block_size = block_size
@@ -63,7 +63,7 @@ class Cache(object):
 
     def _calculate_size(self):
         '''Calculates the cache size in bytes'''
-        return self._n_sets * self._n_ways * self._block_size
+        return self.n_sets * self.n_ways * self._block_size
 
     def __getitem__(self, addr):
         '''Looks for a word in the cache using
@@ -90,7 +90,7 @@ class Cache(object):
         #If we've never seen the index before, create an empty dict
         cache_set = self._sets.setdefault(index, {})
         t = time()
-        if len(cache_set) < self._n_ways:
+        if len(cache_set) < self.n_ways:
             #insert/update timestamp of the block
             cache_set[tag] = t
         else:
@@ -151,14 +151,14 @@ class Cache(object):
         #Do some cursory checks to verify sane results. Doesn't
         #prove that they're valid, just that they could be.
 
-        assert all([len(s) <= self._n_ways
+        assert all([len(s) <= self.n_ways
                    for s in self._sets.itervalues()])
         assert ops == len(trace)
 
         results = dict(
                        cache_size=self._size,
-                       n_ways=self._n_ways,
-                       n_sets=self._n_sets,
+                       n_ways=self.n_ways,
+                       n_sets=self.n_sets,
                        total_missrate=total_missrate,
                        write_missrate=write_missrate,
                        read_missrate=read_missrate,
