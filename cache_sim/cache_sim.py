@@ -185,6 +185,4 @@ def simulate_all(infile, outfile):
     caches = test_caches()
     results = [c.simulate(infile) for c in caches]
     with open(outfile, 'w') as o:
-        for result in results:
-            j = json.dumps(result, indent=4)
-            print >> o, j
+        j = json.dump(results, o, indent=4)
