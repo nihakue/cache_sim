@@ -2,6 +2,7 @@ from trace_read import trace_read
 import sys
 from math import log
 from time import time
+import pdb
 
 
 
@@ -9,30 +10,30 @@ class Cache(object):
     """The class implements a cache. Use the cache's simulate function
     to observe its performance.
 
-    :param: ways = associativity of the cache.
+    :param: n_ways = associativity of the cache.
     :type: int
-    :param: sets = number of sets in the cache.
+    :param: n_sets = number of sets in the cache.
     :type: int
     :param: block_size size of one cache blocks
     :type: int
     :param: address_size number of bits in a raw address
     """
-    def __init__(self, ways=1, sets=128, block_size=32, address_size=48):
+    def __init__(self, n_ways=1, n_sets=128, block_size=32, address_size=48):
         # assert all((x % 2 == 0
-        #            for x in [sets, block_size]))
-        # assert ways is 1 or ways % 2 == 0
+        #            for x in [n_sets, block_size]))
+        # assert n_ways is 1 or n_ways % 2 == 0
 
-        self._ways = ways
-        self._sets = sets
+        self._n_ways = n_ways
+        self._n_sets = n_sets
         self._address_size = address_size
         #Block size in Bytes
         self._block_size = block_size
         self._size = self._calculate_size()
         #Get the # of bits needed to _decode the index
-        self._index_bits = int(log(sets, 2))
+        self._index_bits = int(log(n_sets, 2))
         #Get the # of bits needed to offset into a block
         self._offset_bits = int(log(block_size, 2))
-        self._set_dicts = {}
+        self._sets = {}
 
         self.w_miss = 0
         self.r_miss = 0
@@ -62,7 +63,7 @@ class Cache(object):
 
     def _calculate_size(self):
         '''Calculates the cache size in bytes'''
-        return self._sets * self._ways * self._block_size
+        return self._n_sets * self._n_ways * self._block_size
 
     def __getitem__(self, addr):
         '''Looks for a word in the cache using
@@ -72,8 +73,8 @@ class Cache(object):
         If the index isn't found, we throw a key error (cold miss).
         '''
         tag, index, offset = self._decode(addr)
-        if index in self._set_dicts:
-            cache_set = self._set_dicts[index]
+        if index in self._sets:
+            cache_set = self._sets[index]
             if tag in cache_set:
                 cache_set[tag] = time()
                 return cache_set
@@ -87,9 +88,9 @@ class Cache(object):
         using LRU replacement policy if needed.'''
         tag, index, offset = self._decode(addr)
         #If we've never seen the index before, create an empty dict
-        cache_set = self._set_dicts.setdefault(index, {})
+        cache_set = self._sets.setdefault(index, {})
         t = time()
-        if len(cache_set) < self._ways:
+        if len(cache_set) < self._n_ways:
             #insert/update timestamp of the block
             cache_set[tag] = t
         else:
@@ -116,7 +117,7 @@ class Cache(object):
         return (tag, index, offset)
 
     def _reset(self):
-        self._set_dicts = {}
+        self._sets = {}
         self.w_ops = 0
         self.r_ops = 0
         self.r_miss = 0
@@ -131,7 +132,7 @@ class Cache(object):
         etc.
         '''
         #Reset cache if it's been run before
-        if self._set_dicts:
+        if self._sets:
             self._reset()
 
         trace = trace_read(tracefile)
@@ -150,14 +151,14 @@ class Cache(object):
         #Do some cursory checks to verify sane results. Doesn't
         #prove that they're valid, just that they could be.
 
-        assert all([len(s) <= self._ways
-                   for s in self._set_dicts.itervalues()])
+        assert all([len(s) <= self._n_ways
+                   for s in self._sets.itervalues()])
         assert ops == len(trace)
 
         results = dict(
                        cache_size=self._size,
-                       ways=self._ways,
-                       sets=self._sets,
+                       n_ways=self._n_ways,
+                       n_sets=self._n_sets,
                        total_missrate=total_missrate,
                        write_missrate=write_missrate,
                        read_missrate=read_missrate,
@@ -172,12 +173,14 @@ class Cache(object):
                 print results
             else:
                 pprint(results)
+            finally:
+                print 'misses: %d, ops: %d' % (misses, ops)
         return results
 
 def test_caches():
     m_range = [1, 2, 4, 8, 16]
-    ways = [1, 2, 4, 8, 16]
-    caches = [Cache(sets=128/k * i, ways=k) for i in m_range for k in ways]
+    n_ways = [1, 2, 4, 8, 16]
+    caches = [Cache(n_sets=128/k * i, n_ways=k) for i in m_range for k in n_ways]
     return caches
 
 def simulate_all(infile, outfile):
