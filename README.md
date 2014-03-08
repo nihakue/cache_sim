@@ -1,11 +1,12 @@
 #cache\_sim
 
-##A cache simulator and analysis tool written in python. Created for a Computer Architecture class at Edinburgh Uni
+###A cache simulator and analysis tool written in python.
+####Created for a Computer Architecture class at Edinburgh Uni
 
 ##Results
 If you're just interested in the simulation results, check out the two .json files mcf\_results.json and gcc\_results.json.
 
-###Usage
+##Usage
 The quickest way to start simulating your own caches is to run the interactive.py script. It will provide a number of prompted command line switches for creating and simulating caches.
 
 If you'd like to get a little more involved, import the Cache class from cache\_sim, and create a cache with c = Cache(n\_sets=128, n\_ways=1) and simulate it with c.simulate('mcf\_memref.out').
